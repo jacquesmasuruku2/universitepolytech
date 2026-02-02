@@ -75,7 +75,7 @@ const App: React.FC = () => {
 
       if (data && data.length > 0) {
         setNews(data.map(item => ({
-          id: item.id,
+          id: item.id.toString(), // On s'assure que l'ID est une string
           title: item.title,
           content: item.content,
           author: item.author || 'Direction UPG',
@@ -96,16 +96,25 @@ const App: React.FC = () => {
   };
 
   const handleSelectNews = async (item: NewsItem) => {
+    // 1. Afficher immédiatement le modal
     setSelectedNews(item);
     
-    // Incrémentation des vues
+    // 2. Incrémentation persistante des vues
     if (isSupabaseConfigured()) {
       try {
-        await supabase.rpc('increment_news_views', { news_id: item.id });
-        // Mise à jour locale immédiate pour l'UI
-        setNews(prev => prev.map(n => n.id === item.id ? { ...n, views: (n.views || 0) + 1 } : n));
+        // Appel RPC à la base de données
+        const { error } = await supabase.rpc('increment_news_views', { news_id: item.id.toString() });
+        
+        if (error) {
+          console.error("Erreur RPC Supabase:", error.message);
+        } else {
+          // Mise à jour de l'état local pour refléter le changement sans recharger
+          setNews(prev => prev.map(n => 
+            n.id === item.id ? { ...n, views: (n.views || 0) + 1 } : n
+          ));
+        }
       } catch (err) {
-        console.error("Erreur increment vues:", err);
+        console.error("Erreur technique lors de l'incrémentation des vues:", err);
       }
     }
   };
@@ -201,7 +210,7 @@ const App: React.FC = () => {
               <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
                 Située à Goma, dans la province du Nord‑Kivu en République démocratique du Congo, l’Université Polytechnique de Goma (UPG) est une institution d’enseignement supérieur tournée vers l’excellence technique, scientifique et sociale. Née d’une vision ambitieuse de formation des futurs bâtisseurs de la RD Congo, l’UPG allie rigueur académique, innovation pratique et impact sur le développement local. L’UPG se distingue par une pédagogie dynamique : elle met l’accent sur des compétences pratiques, l’innovation technologique et la capacité à apporter des solutions concrètes aux défis socio‑économiques de la région. L’université forme des professionnels compétents dans les domaines des sciences appliquées, de l’ingénierie, des technologies de l’information et de la gestion des infrastructures, ainsi que dans d’autres filières techniques essentielles pour le progrès technologique et industriel du pays.
 
-Forte d’un environnement d’apprentissage innovant et inclusif, l’UPG encourage les étudiants à se réinventer, à penser de manière critique et à exploiter pleinement les nouvelles technologies pour relever les défis actuels et futurs. L’université se veut un véritable carrefour d’innovation et de créativité, contribuant non seulement à la formation de cadres compétents, mais aussi à l’optimisation du capital humain au service du développement durable de la RD Congo..
+Forte d’un environnement d’apprentissage innovant et inclusif, l’UPG encourage les étudiants à se réinventer, à penser de manière critique et à exploiter pleinement les nouvelles technologies pour relever les défis actuels et futurs. L’université se veut un véritable carrefour d’innovation et de créativité, contribuant nottament à la formation de cadres compétents, mais aussi à l’optimisation du capital humain au service du développement durable de la RD Congo.
               </p>
               
               <div className="grid sm:grid-cols-2 gap-8">
