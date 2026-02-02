@@ -22,7 +22,8 @@ BEGIN
 END $$;
 
 -- 5. Fonction robuste pour incrémenter les vues
--- On utilise le transtypage ::text pour l'ID afin de supporter à la fois les UUID et les TEXT
+-- L'utilisation de SECURITY DEFINER permet à la fonction d'ignorer les politiques RLS de la table news
+-- pour cette action spécifique, permettant aux visiteurs (anon) d'incrémenter le compteur.
 CREATE OR REPLACE FUNCTION increment_news_views(news_id TEXT)
 RETURNS void AS $$
 BEGIN
@@ -30,9 +31,8 @@ BEGIN
   SET views = COALESCE(views, 0) + 1
   WHERE id::text = news_id;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 6. Accorder la permission d'exécution au rôle anonyme (très important pour Supabase)
+-- 6. Accorder la permission d'exécution aux rôles nécessaires
 GRANT EXECUTE ON FUNCTION increment_news_views(TEXT) TO anon;
 GRANT EXECUTE ON FUNCTION increment_news_views(TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION increment_news_views(TEXT) TO service_role;
