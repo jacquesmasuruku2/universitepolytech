@@ -1,0 +1,7 @@
+{
+  "name": "Université Polytechnique de Goma (UPG)",
+  "description": "Portail institutionnel moderne de l'Université Polytechnique de Goma, offrant des informations académiques, l'inscription en ligne et une assistance par IA.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
