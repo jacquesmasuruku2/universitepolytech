@@ -21,12 +21,18 @@ BEGIN
     END IF;
 END $$;
 
--- 5. Fonction pour incrémenter les vues
+-- 5. Fonction robuste pour incrémenter les vues
+-- On utilise le transtypage ::text pour l'ID afin de supporter à la fois les UUID et les TEXT
 CREATE OR REPLACE FUNCTION increment_news_views(news_id TEXT)
 RETURNS void AS $$
 BEGIN
   UPDATE news
   SET views = COALESCE(views, 0) + 1
-  WHERE id = news_id;
+  WHERE id::text = news_id;
 END;
 $$ LANGUAGE plpgsql;
+
+-- 6. Accorder la permission d'exécution au rôle anonyme (très important pour Supabase)
+GRANT EXECUTE ON FUNCTION increment_news_views(TEXT) TO anon;
+GRANT EXECUTE ON FUNCTION increment_news_views(TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION increment_news_views(TEXT) TO service_role;
