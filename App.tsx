@@ -75,7 +75,7 @@ const App: React.FC = () => {
 
       if (data && data.length > 0) {
         setNews(data.map(item => ({
-          id: item.id.toString(), // On s'assure que l'ID est une string
+          id: item.id.toString(),
           title: item.title,
           content: item.content,
           author: item.author || 'Direction UPG',
@@ -96,25 +96,29 @@ const App: React.FC = () => {
   };
 
   const handleSelectNews = async (item: NewsItem) => {
-    // 1. Afficher immédiatement le modal
-    setSelectedNews(item);
+    // 1. Préparer l'objet mis à jour (Optimistic Update)
+    const updatedItem = { ...item, views: (item.views || 0) + 1 };
     
-    // 2. Incrémentation persistante des vues
+    // 2. Mettre à jour immédiatement l'état du modal pour l'utilisateur
+    setSelectedNews(updatedItem);
+    
+    // 3. Mettre à jour la liste globale pour que le changement soit visible sur la grille
+    setNews(prev => prev.map(n => n.id === item.id ? updatedItem : n));
+    
+    // 4. Enregistrer de manière durable dans Supabase
     if (isSupabaseConfigured()) {
       try {
-        // Appel RPC à la base de données
-        const { error } = await supabase.rpc('increment_news_views', { news_id: item.id.toString() });
+        const { error } = await supabase.rpc('increment_news_views', { 
+          news_id: item.id.toString() 
+        });
         
         if (error) {
-          console.error("Erreur RPC Supabase:", error.message);
-        } else {
-          // Mise à jour de l'état local pour refléter le changement sans recharger
-          setNews(prev => prev.map(n => 
-            n.id === item.id ? { ...n, views: (n.views || 0) + 1 } : n
-          ));
+          console.error("Erreur de persistance des vues:", error.message);
+          // Optionnel: On pourrait revenir en arrière en cas d'erreur, 
+          // mais pour les vues, on préfère une UX fluide.
         }
       } catch (err) {
-        console.error("Erreur technique lors de l'incrémentation des vues:", err);
+        console.error("Échec de l'appel RPC:", err);
       }
     }
   };
